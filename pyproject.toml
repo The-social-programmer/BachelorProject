@@ -1,0 +1,23 @@
+[project]
+name = "studentproject"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "ase>=3.27.0",
+    "botorch>=0.17.2",
+    "gpaw>=25.7.0",
+    "matplotlib>=3.10.8",
+    "numpy>=2.3.5",
+    "torch>=2.10.0",
+    "upet>=0.2.1",
+]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
