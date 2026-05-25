@@ -1,15 +1,15 @@
 import matplotlib.pyplot as plt
 import csv
 
-# reader for files output and output_pen
+# reader for files mean_module_repulsion, UCBvsLOGEI, DFTvsPETMAD and kernel
 
-with open("output_pen.csv", mode="r", newline="") as file:
+with open("UCBvsLOGEI.csv", mode="r", newline="") as file:
     data = csv.reader(file)
     color = "b"
     label = "nothing"
     index = 1
     firstTime = 0
-    compare = "BFGS"
+    compare = "UCB"
     material = ["Si2", "TiO2", "Si16", "Cu2O"]
     for line in data:
         if len(line) == 0:
@@ -22,7 +22,7 @@ with open("output_pen.csv", mode="r", newline="") as file:
                 label = compare
             elif line[0] == "BO":
                 color = "b"
-                label = "BO"
+                label = "LOGEI"
             elif line[0] == "True energy":
                 color = "0"
                 label = "True energy"

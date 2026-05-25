@@ -22,11 +22,9 @@ from gpytorch.mlls import ExactMarginalLogLikelihood
 from botorch.acquisition import LogExpectedImprovement
 from botorch.acquisition import UpperConfidenceBound
 from botorch.optim import optimize_acqf
-import os
 import matplotlib.pyplot as plt
 import csv
 from gpytorch.means import Mean
-os.environ["HF_TOKEN"] = "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"
 
 
 ################################################################################
@@ -293,7 +291,7 @@ for j in range(6,10):
         gp = SingleTaskGP(
             train_X=train_X,
             train_Y=train_Y,
-            #mean_module=RepulsiveMean(cell=cell, symbols=symbols, min_dist=1.5),
+            mean_module=RepulsiveMean(cell=cell, symbols=symbols, min_dist=1.5),
             covar_module=ScaleKernel(MaternKernel(nu=2.5, ard_num_dims=d)),
             input_transform=Normalize(d=d),
             outcome_transform=Standardize(m=1),
@@ -302,10 +300,10 @@ for j in range(6,10):
         fit_gpytorch_mll(mll)
 
         # ii) define an acquisition function and optimize it
-        UCB = UpperConfidenceBound(model=gp, beta=2.0)
-        #logEI = LogExpectedImprovement(model=gp, best_f=train_Y.max())
+        #UCB = UpperConfidenceBound(model=gp, beta=2.0)
+        logEI = LogExpectedImprovement(model=gp, best_f=train_Y.max())
         candidate, acq_value = optimize_acqf(
-            UCB,
+            logEI,
             bounds=bounds,
             q=1, # defines the size of candidate (q,d)
             num_restarts=5,
@@ -328,7 +326,7 @@ for j in range(6,10):
             f"Iter {i:3d} | E={-new_y.item():.4f} eV | best={-train_Y.max().item():.4f} eV"
         )
         
-    with open("UCBvsLOGEI.csv", mode="a", newline="") as file:
+    with open("mean_module_repulsion.csv", mode="a", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(["Seed", 42+j])
         writer.writerow(["BO"])
