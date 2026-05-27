@@ -17,7 +17,7 @@ import torch
 from botorch.models import SingleTaskGP
 from botorch.models.transforms import Normalize, Standardize
 from botorch.fit import fit_gpytorch_mll
-from gpytorch.kernels import MaternKernel, ScaleKernel
+from gpytorch.kernels import MaternKernel, ScaleKernel, RBFKernel
 from gpytorch.mlls import ExactMarginalLogLikelihood
 from botorch.acquisition import LogExpectedImprovement
 from botorch.acquisition import UpperConfidenceBound
@@ -57,7 +57,7 @@ def make_calculator(kind="pet-mad-s"):
 
 
 # Some example systems to choose from
-system = "Cu2O"
+system = "Si2"
 
 if system == "Si2":
     atoms_true = ase.build.bulk("Si", "diamond", a=5.43)
@@ -85,8 +85,6 @@ cell = atoms_true.cell.copy()
 symbols = atoms_true.get_chemical_symbols()
 n_atoms = len(symbols)
 
-
-kindCal = "petmad"
 def make_atoms(scaled_positions):
     atoms = ase.Atoms(
         symbols=symbols,
@@ -94,10 +92,7 @@ def make_atoms(scaled_positions):
         cell=cell,
         pbc=True,
     )
-    if kindCal == "petmad":
-        atoms.calc = make_calculator()
-    elif kindCal == "gpaw":
-        atoms.calc = make_calculator("GPAW")
+    atoms.calc = make_calculator("GPAW")
     return atoms
 
 
@@ -105,7 +100,7 @@ def make_atoms(scaled_positions):
 # 2: The true ground state
 ################################################################################
 print(f"\n=== True ground state ===")
-atoms_true.calc = make_calculator()
+atoms_true.calc = make_calculator("GPAW")
 dyn = BFGS(atoms_true)
 dyn.run(fmax=0.001)
 E_true = atoms_true.get_potential_energy()
@@ -145,16 +140,14 @@ dyn.run(fmax=0.001)
 energies = np.array(energies)
 
 
-with open("DFTvsPETMAD.csv", mode="a", newline="") as file:
+with open("/home/andres/BachelorProject/output_no_pen.csv", mode="a", newline="") as file:
     writer = csv.writer(file)
-    writer.writerow(["True energy"])
-    writer.writerow([E_true])
     writer.writerow(["BFGS"])
     writer.writerow(energies)
     
 plt.plot(energies)
-
 """
+
 E_loc = atoms_loc.get_potential_energy()
 print(f"Relaxed energy: {E_loc:.4f} eV ({E_loc / n_atoms:.4f} eV/atom)")
 print(f"Gap to ground state: {E_loc - E_true:.4f} eV")
@@ -260,15 +253,13 @@ bounds = torch.tensor(
 
 # Initialization: Here we just start with a single initial guess
 # THIS IS MOST LIKELY NOT IDEAL!
-for j in range(6,10):
+for j in range(0,10):
     np.random.seed(42 + j)
     scaled_positions_init = np.random.rand(n_atoms, 3) # atoms_true.get_scaled_positions()
     scaled_positions_init[0] = 0.0  # pin first atom at origin
     x_init = torch.tensor(np.array(scaled_positions_init[1:]).ravel(), dtype=torch.double)
 
     # Let's try the objective function:
-    #if j == 1:
-    #    kindCal = "gpaw"
     
     obj = objective(x_init)
     y_init = obj[0]
@@ -291,8 +282,8 @@ for j in range(6,10):
         gp = SingleTaskGP(
             train_X=train_X,
             train_Y=train_Y,
-            mean_module=RepulsiveMean(cell=cell, symbols=symbols, min_dist=1.5),
-            covar_module=ScaleKernel(MaternKernel(nu=2.5, ard_num_dims=d)),
+            #mean_module=RepulsiveMean(cell=cell, symbols=symbols, min_dist=1.5),
+            covar_module=ScaleKernel(MaternKernel(nu=2.5, ard_num_dims=d)), # RBFKernel(ard_num_dims=d
             input_transform=Normalize(d=d),
             outcome_transform=Standardize(m=1),
         )
@@ -326,7 +317,7 @@ for j in range(6,10):
             f"Iter {i:3d} | E={-new_y.item():.4f} eV | best={-train_Y.max().item():.4f} eV"
         )
         
-    with open("mean_module_repulsion.csv", mode="a", newline="") as file:
+    with open("/home/andres/BachelorProject/MATTERNvsRBF.csv", mode="a", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(["Seed", 42+j])
         writer.writerow(["BO"])

@@ -3,7 +3,7 @@ import csv
 
 # reader for files output and output_pen
 
-with open("output_pen.csv", mode="r", newline="") as file:
+with open("/home/andres/BachelorProject/output_pen.csv", mode="r", newline="") as file:
     data = csv.reader(file)
     color = "b"
     label = "nothing"
