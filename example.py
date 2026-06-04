@@ -19,8 +19,7 @@ from botorch.models.transforms import Normalize, Standardize
 from botorch.fit import fit_gpytorch_mll
 from gpytorch.kernels import MaternKernel, ScaleKernel, RBFKernel
 from gpytorch.mlls import ExactMarginalLogLikelihood
-from botorch.acquisition import LogExpectedImprovement
-from botorch.acquisition import UpperConfidenceBound
+from botorch.acquisition import LogExpectedImprovement, UpperConfidenceBound
 from botorch.optim import optimize_acqf
 import matplotlib.pyplot as plt
 import csv
@@ -57,7 +56,7 @@ def make_calculator(kind="pet-mad-s"):
 
 
 # Some example systems to choose from
-system = "Si2"
+system = "Si16"
 
 if system == "Si2":
     atoms_true = ase.build.bulk("Si", "diamond", a=5.43)
@@ -92,7 +91,7 @@ def make_atoms(scaled_positions):
         cell=cell,
         pbc=True,
     )
-    atoms.calc = make_calculator("GPAW")
+    atoms.calc = make_calculator()
     return atoms
 
 
@@ -100,7 +99,7 @@ def make_atoms(scaled_positions):
 # 2: The true ground state
 ################################################################################
 print(f"\n=== True ground state ===")
-atoms_true.calc = make_calculator("GPAW")
+atoms_true.calc = make_calculator()
 dyn = BFGS(atoms_true)
 dyn.run(fmax=0.001)
 E_true = atoms_true.get_potential_energy()
@@ -317,14 +316,13 @@ for j in range(0,10):
             f"Iter {i:3d} | E={-new_y.item():.4f} eV | best={-train_Y.max().item():.4f} eV"
         )
         
-    with open("/home/andres/BachelorProject/MATTERNvsRBF.csv", mode="a", newline="") as file:
+    with open("/home/andres/BachelorProject/qLCB.csv", mode="a", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(["Seed", 42+j])
         writer.writerow(["BO"])
         writer.writerow(y_points)
         
     plt.plot(y_points)
-
 
 # Results
 best_idx = train_Y.argmax()

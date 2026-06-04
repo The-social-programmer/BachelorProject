@@ -2,64 +2,68 @@ import matplotlib.pyplot as plt
 import csv
 import numpy as np
 
-# reader for files mean_module_repulsion, UCBvsLOGEI, DFTvsPETMAD and kernel
+# reader for files mean_module_repulsion, UCBvsLOGEI, DFTvsPETMAD and MATTERNVSRBF
 
-for j in range(0,2):
-    if j == 0:
-        path = "/home/andres/BachelorProject/UCBvsLOGEI.csv"
-    else:
-        path = "/home/andres/BachelorProject/StandardBO.csv"
+OPT_VALS = {
+    "Cu2O": -31.458280563354492,
+    "Si16": -94.24507904052734,
+    "TiO2": -56.89365768432617,
+    "Si2": -11.780633926391602,
+}
+
+def get_data(path):
     with open(path, mode="r", newline="") as file:
         data = csv.reader(file)
-        color = "b"
-        label = "nothing"
         index = 1
-        firstTime = 0
-        compare = "UCB" # Change here
         material = ["Si2", "TiO2", "Si16", "Cu2O"]
-        masterCurve = []
+        master_curve = []
         for line in data:
+            # Empty line between between every system in csv file
             if len(line) == 0:
-                plt.legend()
-                firstTime = 0
+                
                 index += 1
-                masterCurve = []
+                master_curve = []
             try:
-                if line[0] == compare:
-                    color = "tab:orange"
-                    label = compare
-                elif line[0] == "BO":
-                    color = "b"
-                    label = "LOGEI" # Change here
-                elif line[0] == "True energy":
-                    color = "0"
-                    label = "True energy"
-
-                x = float(line[0])
-                if isinstance(x, float) : #and len(line) != 1
-                    for i in range(0, len(line)):
-                        line[i] = float(line[i])
-                    if len(line) == 1:
-                        for i in range(0, 100):
-                            line.append(line[0])
-                        if firstTime < 1 and j == 1:
-                            plt.subplot(2,2,index)
-                            plt.title(material[index-1])
-                            plt.plot(line, color=color, label=label, linestyle = "dashed")
-                            firstTime += 1
-                    else:
-                        masterCurve.append(line[0:100])
-                        if len(masterCurve) == 10:
-                            mean = np.array(masterCurve).mean(axis=0)
-                            std = np.array(masterCurve).std(axis=0)
-                            x = np.arange(len(mean))
-                            plt.subplot(2,2,index)
-                            plt.title(material[index-1])
-                            plt.fill_between(x, mean-std, mean+std, color=color, alpha=0.2)
-                            plt.plot(mean, color=color, label=label)
-                        
+                float(line[0])
             except:
-                pass
+                continue
 
-plt.legend()
+            for i in range(0, len(line)):
+                line[i] = float(line[i])
+            master_curve.append(line[0:100])
+            
+            if len(master_curve) == 10:
+                system = material[index-1]
+                opt_val = OPT_VALS[system]
+                objective_values = np.array(master_curve)
+                regret_values = objective_values - opt_val
+                vals_to_plot = np.log(regret_values)
+                plot_data(vals_to_plot, index, system)
+
+def plot_data(data, index, system):
+    #fig, axes = plt.subplots(2,2)
+    mean = data.mean(axis=0)
+    median = np.median(data, axis=0)
+    qlow = np.quantile(data, 0, axis=0)
+    qhigh = np.quantile(data, 1, axis=0)
+    x = np.arange(len(mean))
+
+    plt.subplot(2,2,index)
+    plt.title(system)
+    plt.fill_between(x, qlow, qhigh, color=color, alpha=0.2)
+    plt.ylabel("log regret")
+    plt.plot(median, color=color, label=label)
+    plt.legend()
+    
+for j in range(0,2):
+    if j == 0:
+        color = "tab:orange"
+        label = "Prior"
+        data = get_data("/home/andres/BachelorProject/mean_module_repulsion.csv")
+    else:
+        color = "b"
+        label = "No repulsion"
+        data = get_data("/home/andres/BachelorProject/StandardBO.csv")
+
+plt.tight_layout()
 plt.show()
