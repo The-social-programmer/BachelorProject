@@ -37,7 +37,7 @@ def get_data(path):
                 opt_val = OPT_VALS[system]
                 objective_values = np.array(master_curve)
                 regret_values = objective_values - opt_val
-                vals_to_plot = np.log(regret_values)
+                vals_to_plot = np.log10(regret_values)
                 plot_data(vals_to_plot, index, system)
 
 def plot_data(data, index, system):
@@ -49,20 +49,21 @@ def plot_data(data, index, system):
     x = np.arange(len(mean))
 
     plt.subplot(2,2,index)
-    plt.title(system)
+    plt.title(system, fontsize="x-large")
     plt.fill_between(x, qlow, qhigh, color=color, alpha=0.2)
-    plt.ylabel("log regret")
+    plt.ylabel("Log regret", fontsize="x-large")
+    plt.xlabel("Iteration", fontsize="x-large")
     plt.plot(median, color=color, label=label)
-    plt.legend()
+    plt.legend(fontsize="x-large")
     
 for j in range(0,2):
     if j == 0:
         color = "tab:orange"
-        label = "Prior"
-        data = get_data("/home/andres/BachelorProject/mean_module_repulsion.csv")
+        label = "UCB"
+        data = get_data("/home/andres/BachelorProject/UCBvsLOGEI.csv")
     else:
         color = "b"
-        label = "No repulsion"
+        label = "LOG_EI"
         data = get_data("/home/andres/BachelorProject/StandardBO.csv")
 
 plt.tight_layout()
